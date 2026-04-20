@@ -1,10 +1,6 @@
-FROM debian:buster-slim as build
+FROM debian:bullseye-slim as build
 
 ENV LANG C.UTF-8
-
-# IFDEF PROXY
-#! RUN echo 'Acquire::http { Proxy "http://${APT_PROXY_HOST}:${APT_PROXY_PORT}"; };' >> /etc/apt/apt.conf.d/01proxy
-# ENDIF
 
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
@@ -15,7 +11,7 @@ RUN apt-get update && \
 RUN mkdir -p /app && \
     cd /app && \
     python3 -m venv .venv && \
-    .venv/bin/pip3 install --upgrade pip &&  \
+    .venv/bin/pip3 install --upgrade pip && \
     .venv/bin/pip3 install --upgrade setuptools wheel
 
 COPY requirements.txt /app/
@@ -23,35 +19,20 @@ RUN /app/.venv/bin/pip3 install -r /app/requirements.txt
 
 # -----------------------------------------------------------------------------
 
-FROM debian:buster-slim as run
+FROM debian:bullseye-slim as run
 
 ENV LANG C.UTF-8
 
-# IFDEF PROXY
-#! RUN echo 'Acquire::http { Proxy "http://${APT_PROXY_HOST}:${APT_PROXY_PORT}"; };' >> /etc/apt/apt.conf.d/01proxy
-# ENDIF
-
 RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
-        python python-scipy libpython2.7 python3 ffmpeg
-
-# IFDEF PROXY
-#! RUN rm -f /etc/apt/apt.conf.d/01proxy
-# ENDIF
+        python2 python3 ffmpeg libpython2.7 \
+        python2-dev python3-pip && \
+    curl -sS https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2 && \
+    python2 -m pip install scipy
 
 COPY seasalt/ /app/seasalt/
 COPY --from=build /app/.venv/ /app/.venv/
 COPY web/ /app/web/
-
-# IFDEF PROXY
-#! ENV PIP_INDEX_URL=http://${PYPI_PROXY_HOST}:${PYPI_PROXY_PORT}/simple/
-#! ENV PIP_TRUSTED_HOST=${PYPI_PROXY_HOST}
-# ENDIF
-
-# IFDEF PROXY
-#! ENV PIP_INDEX_URL=''
-#! ENV PIP_TRUSTED_HOST=''
-# ENDIF
 
 COPY run.sh /
 
