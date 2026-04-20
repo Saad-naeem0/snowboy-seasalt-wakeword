@@ -7,6 +7,7 @@ See: https://github.com/seasalt-ai/snowboy
 import argparse
 import asyncio
 import logging
+import os
 import shutil
 import signal
 import tempfile
@@ -42,7 +43,12 @@ def parse_args():
     parser.add_argument(
         "--host", type=str, help="Host for web server", default="0.0.0.0"
     )
-    parser.add_argument("--port", type=int, help="Port for web server", default=8000)
+    parser.add_argument(
+        "--port",
+        type=int,
+        help="Port for web server (default: $PORT or 8000)",
+        default=int(os.environ.get("PORT", "8000")),
+    )
     parser.add_argument(
         "--audio-dir", help="Path to store recorded audio (default: temp dir)"
     )
